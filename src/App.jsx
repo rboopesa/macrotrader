@@ -36,7 +36,14 @@ const SANS="'Syne','DM Sans',-apple-system,sans-serif";
     .pulse{animation:pulse 2s ease infinite}
     input[type=range]{-webkit-appearance:none;width:100%;height:4px;border-radius:4px;outline:none;cursor:pointer}
     input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;cursor:pointer;border:3px solid white;box-shadow:0 1px 6px rgba(0,0,0,0.25)}
-    @media(max-width:768px){.desk{display:none!important}.stack{flex-direction:column!important}.full{width:100%!important}}
+    @media(max-width:768px){
+      .desk{display:none!important}
+      .stack{flex-direction:column!important}
+      .full{width:100%!important}
+      .mob-col{grid-template-columns:1fr!important}
+      .mob-2col{grid-template-columns:1fr 1fr!important}
+      .tv-wrap{min-height:300px!important;height:300px!important}
+    }
   `;
   document.head.appendChild(s);
 })();
@@ -519,7 +526,7 @@ function PredChart({assetKey,base,params,newsDelta}){
         <Line dataKey="deesc" name="De-esc Path" stroke={C.green} strokeWidth={2} strokeDasharray="6 3" dot={false} connectNulls/>
       </AreaChart>
     </ResponsiveContainer>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginTop:10}}>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:8,marginTop:10}}>
       {[
         {l:"CURRENT",v:`${unit}${base.toLocaleString("en-IN",{maximumFractionDigits:2})}`,c:C.navy,tip:"Today's live price"},
         {l:"BULL CASE",v:`${unit}${pred.bull.toLocaleString("en-IN",{maximumFractionDigits:0})}`,c:C.green,tip:"Best realistic outcome"},
@@ -558,7 +565,7 @@ function SignalCard({sig}){
         </div>
       </div>
       {/* Technical indicators */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:10}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:8,marginBottom:10}}>
         <div style={{background:C.panel,borderRadius:8,padding:"8px 10px"}}>
           <div style={{fontSize:9,color:C.dim,fontWeight:700,letterSpacing:0.8,marginBottom:2}}>RSI ({sig.rsi})</div>
           <div style={{fontSize:12,fontWeight:700,color:sig.rsi<30?C.green:sig.rsi>70?C.red:C.textMid}}>{sig.rsi<30?"Oversold":sig.rsi>70?"Overbought":"Neutral"}</div>
@@ -598,7 +605,7 @@ function SignalCard({sig}){
         </div>
       </div>
       {/* Stats */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,marginBottom:12}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:6,marginBottom:12}}>
         {[
           {l:"EXP RETURN",v:`${sig.expRet>0?"+":""}${sig.expRet}%`,c:sig.expRet>0?C.green:C.red,tip:"Expected % gain if target hit"},
           {l:"MAX LOSS",v:`${sig.expDD}%`,c:C.red,tip:"Maximum loss if stop hit"},
@@ -615,7 +622,7 @@ function SignalCard({sig}){
       {/* ── ALWAYS VISIBLE PRICE LEVELS ── */}
       <div style={{borderTop:`1.5px solid ${C.border}`,paddingTop:12}}>
         <div style={{fontSize:10,fontWeight:700,color:C.navy,letterSpacing:0.5,marginBottom:8}}>📍 PRICE ACTION LEVELS</div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:8}}>
           <div style={{background:C.greenBg,borderRadius:8,padding:"10px 12px",border:`1px solid ${C.greenBorder}`,textAlign:"center"}}>
             <div style={{fontSize:9,color:C.green,fontWeight:700,letterSpacing:0.8,marginBottom:3}}>🟢 ENTRY PRICE</div>
             <div style={{fontSize:15,fontWeight:800,fontFamily:MONO,color:C.navy}}>{info?.unit}{sig.entry.toLocaleString("en-IN",{maximumFractionDigits:2})}</div>
@@ -840,8 +847,8 @@ export default function MacroTrader(){
             {FA.map(a=><button key={a.k} onClick={()=>setSelAsset(a.k)} style={{padding:"5px 13px",borderRadius:20,border:`1.5px solid ${selAsset===a.k?C.navy:C.border}`,background:selAsset===a.k?C.navy:C.card,color:selAsset===a.k?"#fff":C.muted,fontSize:11,fontWeight:600,cursor:"pointer",transition:"all 0.15s"}}>{a.l}</button>)}
           </div>
 
-          {/* Side by side charts */}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}} className="stack">
+          {/* Side by side charts — stack on mobile */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}} className="mob-col">
             <Card noPad style={{overflow:"hidden"}}>
               <div style={{padding:"12px 16px 8px",borderBottom:`1px solid ${C.border}`,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:6}}>
                 <div>
@@ -852,7 +859,7 @@ export default function MacroTrader(){
                   {["1H","4H","1D","1W","1M"].map(tf=><button key={tf} onClick={()=>setTvInterval(tf)} style={{padding:"3px 8px",borderRadius:4,border:`1px solid ${tvInterval===tf?C.navy:C.border}`,background:tvInterval===tf?C.navy:C.card,color:tvInterval===tf?"#fff":C.muted,fontSize:10,fontWeight:700,cursor:"pointer"}}>{tf}</button>)}
                 </div>
               </div>
-              <div style={{height:420}}><TVChart symbol={ASSETS[selAsset]?.tv||"NSE:NIFTY"} interval={TV_INT[tvInterval]||"D"}/></div>
+              <div style={{height:360}} className="tv-wrap"><TVChart symbol={ASSETS[selAsset]?.tv||"NSE:NIFTY"} interval={TV_INT[tvInterval]||"D"}/></div>
             </Card>
             <Card>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
@@ -899,7 +906,7 @@ export default function MacroTrader(){
           {/* Crypto section */}
           <Card>
             <SHead title="Crypto Correlation" sub="How BTC and ETH relate to gold and crude — are they acting as safe havens or risk assets today?"/>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}} className="stack">
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}} className="mob-col">
               {["btc","eth"].map(k=>{
                 const sig=signals[k];
                 const corrGold=pearson((priceHistRef.current[k]||[]).slice(-30),(priceHistRef.current.gold||[]).slice(-30));
@@ -910,7 +917,7 @@ export default function MacroTrader(){
                     <div><div style={{fontSize:15,fontWeight:700,color:C.navy}}>{ASSETS[k]?.label}</div><div style={{fontSize:10,color:C.muted}}>Cryptocurrency</div></div>
                     <div style={{textAlign:"right"}}><div style={{fontSize:16,fontWeight:700,fontFamily:MONO,color:C.navy}}>{ASSETS[k]?.unit}{getP(k).toLocaleString("en-IN",{maximumFractionDigits:0})}</div><Delta v={getC(k)} small/></div>
                   </div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:8}}>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:6,marginBottom:8}}>
                     <div style={{background:C.card,borderRadius:6,padding:"6px",textAlign:"center"}}><div style={{fontSize:9,color:C.dim}}>vs GOLD</div><div style={{fontSize:13,fontWeight:700,fontFamily:MONO,color:corrGold>0.5?C.gold:C.muted}}>{corrGold.toFixed(2)}</div><Explain text={corrGold>0.5?"Moving with gold":"Not tracking gold"}/></div>
                     <div style={{background:C.card,borderRadius:6,padding:"6px",textAlign:"center"}}><div style={{fontSize:9,color:C.dim}}>vs CRUDE</div><div style={{fontSize:13,fontWeight:700,fontFamily:MONO,color:Math.abs(corrCrude)>0.5?C.blue:C.muted}}>{corrCrude.toFixed(2)}</div><Explain text={Math.abs(corrCrude)>0.5?"Correlated to crude":"Independent of crude"}/></div>
                     {sig&&<div style={{background:C.card,borderRadius:6,padding:"6px",textAlign:"center"}}><div style={{fontSize:9,color:C.dim}}>SIGNAL</div><div style={{fontSize:13,fontWeight:700,color:sig.action==="BUY"?C.green:sig.action==="SELL"?C.red:C.amber}}>{sig.action}</div><Explain text={`Score: ${sig.score}/100`}/></div>}
@@ -1004,7 +1011,7 @@ export default function MacroTrader(){
             <div style={{background:C.amberBg,borderRadius:8,padding:"8px 12px",marginBottom:12,border:`1px solid ${C.amberBorder}`,fontSize:11,color:C.amber}}>
               💡 <strong>Why this matters:</strong> FII (Foreign Institutional Investors) control ~20% of NSE. When they sell heavily, NIFTY falls regardless of domestic factors. DII (Domestic like LIC, mutual funds) often buy when FII sells, providing support. The NET number tells you the real direction.
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:14}}>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:10,marginBottom:14}}>
               <div style={{background:C.panel,borderRadius:8,padding:"12px",textAlign:"center"}}>
                 <div style={{fontSize:10,color:C.dim,fontWeight:700,marginBottom:4}}>FII TODAY</div>
                 <div style={{fontSize:20,fontWeight:800,fontFamily:MONO,color:fiiLatest.fii>=0?C.green:C.red}}>{fiiLatest.fii>=0?"+":""}₹{Math.abs(fiiLatest.fii).toLocaleString()} Cr</div>
@@ -1185,7 +1192,7 @@ export default function MacroTrader(){
                 </div>
               </div>
               <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10}}>{ev.assets.map(a=><Tag key={a} color={C.blue} small>{ASSETS[a]?.label||a}</Tag>)}</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,fontSize:11}} className="stack">
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:10,fontSize:11}} className="mob-col">
                 <div style={{background:C.panel,borderRadius:8,padding:"10px"}}>
                   <div style={{fontSize:9,color:C.dim,fontWeight:700,letterSpacing:0.8,marginBottom:4}}>📊 WHAT HAPPENED LAST TIME</div>
                   <div style={{color:C.textMid,lineHeight:1.5,marginBottom:4}}>{ev.historical}</div>
@@ -1210,7 +1217,7 @@ export default function MacroTrader(){
         {tab==="watchlist"&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
 
           {/* Header + sector rotation summary */}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}} className="stack">
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}} className="mob-col">
             <div>
               <SHead title="Conflict Plays Watchlist" sub={`Regime: ${regimeLabel} · Effective escalation ${Math.round(effEsc)}%`}/>
               <div style={{background:C.panel,borderRadius:10,padding:"12px 14px",border:`1px solid ${C.border}`,fontSize:11,color:C.textMid,lineHeight:1.6}}>
@@ -1307,7 +1314,7 @@ export default function MacroTrader(){
         </div>}
 
         {/* ══════════ TAB 6: NEWS & AI BRIEF ══════════ */}
-        {tab==="news"&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,alignItems:"start"}} className="stack">
+        {tab==="news"&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,alignItems:"start"}} className="mob-col">
 
           {/* Left: News */}
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
@@ -1320,7 +1327,7 @@ export default function MacroTrader(){
               <button onClick={refreshNews} disabled={newsLoading} style={{padding:"5px 12px",borderRadius:6,border:`1px solid ${C.border}`,background:C.card,fontSize:11,fontWeight:600,color:C.muted,cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>{newsLoading?<Spin size={10} color={C.muted}/>:"↺"} Refresh</button>
             </div>
             {/* Sentiment summary */}
-            <div style={{background:C.termBg,borderRadius:10,padding:"12px 14px",display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10}}>
+            <div style={{background:C.termBg,borderRadius:10,padding:"12px 14px",display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:10}}>
               {[{l:"BULLISH",v:news.filter(n=>n.impact==="bullish").length,c:C.termGreen,tip:"Good news for markets"},{l:"BEARISH",v:news.filter(n=>n.impact==="bearish").length,c:C.termRed,tip:"Bad news for markets"},{l:"TIER 1",v:news.filter(n=>n.tier===1).length,c:C.termBlue,tip:"High-reliability sources"},{l:"ESC SIGNAL",v:`${newsEscDelta>0?"+":""}${(newsEscDelta*100).toFixed(0)}%`,c:C.termAmber,tip:"How much news is shifting escalation estimate"}].map(({l,v,c,tip})=><div key={l} style={{textAlign:"center"}}><div style={{fontSize:9,color:C.termMuted,fontWeight:700,letterSpacing:1}}>{l}</div><div style={{fontSize:18,fontWeight:700,color:c,fontFamily:MONO}}>{v}</div><div style={{fontSize:9,color:C.termMuted}}>{tip}</div></div>)}
             </div>
             {/* Filters */}
@@ -1361,7 +1368,7 @@ export default function MacroTrader(){
             </div>
             <Card style={{background:C.panel}}>
               <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:0.8,marginBottom:8}}>BRIEFING INPUTS</div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8}}>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:8}}>
                 {[{l:"ESC%",v:`${params.escalation}%`,c:C.red,tip:"Your escalation slider"},{l:"NEWS ADJ",v:`${newsEscDelta>0?"+":""}${(newsEscDelta*100).toFixed(0)}%`,c:C.purple,tip:"News sentiment adjustment"},{l:"EFF ESC",v:`${Math.round(effEsc)}%`,c:regimeColor,tip:"Combined effective escalation"},{l:"HEADLINES",v:news.length,c:C.blue,tip:"Headlines Claude will read"}].map(({l,v,c,tip})=><div key={l} style={{background:C.card,borderRadius:6,padding:"7px",textAlign:"center",border:`1px solid ${C.border}`}}><div style={{fontSize:9,color:C.dim,fontWeight:700,letterSpacing:0.8}}>{l}</div><div style={{fontSize:15,fontWeight:700,color:c,fontFamily:MONO}}>{v}</div><Explain text={tip}/></div>)}
               </div>
             </Card>
