@@ -1249,36 +1249,12 @@ function TVChart({ symbol, interval="D", ohlcv=[], unit="", label="", signal=nul
 function PredChart({assetKey,base,params,newsDelta,priceHistory=[]}){
 const [histWindow,setHistWindow]=useState(30);
 const [activeScenario,setActiveScenario]=useState(null);
-const showEMA20=true,showEMA50=true,showFib=false,showSR=false,showForecast=true;
 const unit=ASSETS[assetKey]?.unit||"";
 const pred=useMemo(()=>genPaths(assetKey,base,params,newsDelta,histWindow),[assetKey,base,params,newsDelta,histWindow]);
 const fmt=(v,dp=0)=>{
 if(!v&&v!==0)return"--";
 return v.toLocaleString("en-IN",{maximumFractionDigits:dp,minimumFractionDigits:dp});
 };
-// Enrich data with EMA lines
-const enriched=useMemo(()=>{
-const data=pred.data;
-if(!data.length)return data;
-let ema20=data[0]?.actual||base;
-let ema50=data[0]?.actual||base;
-const k20=2/(20+1),k50=2/(50+1);
-return data.map(d=>{
-const price=d.actual||base;
-ema20=price*k20+ema20*(1-k20);
-ema50=price*k50+ema50*(1-k50);
-return{...d,ema20:+ema20.toFixed(2),ema50:+ema50.toFixed(2)};
-});
-},[pred.data,base]);
-// Fibonacci levels
-const fibRange=(pred.escTarget-pred.dscTarget)||base*0.08;
-const fibHigh=pred.escTarget;
-const fibLevels=[0.236,0.382,0.5,0.618,0.786].map(r=>({
-r,price:+(fibHigh-r*fibRange).toFixed(2),isKey:r===0.382||r===0.5||r===0.618,
-}));
-// S/R zones
-const srResist=+(pred.escTarget*0.97).toFixed(2);
-const srSupport=+(pred.dscTarget*1.03).toFixed(2);
 // Structure score (placeholder — TODO: wire from chartEngine)
 const structScore=71;
 const escPct=+((pred.escTarget-base)/base*100).toFixed(1);
@@ -1402,7 +1378,7 @@ fontSize:9,fontWeight:700,color:structScore>=70?C.blue:structScore>=50?C.amber:C
 {/* Chart */}
 <div style={{background:C.card,borderRadius:10,border:`1px solid ${C.border}`,padding:"8px 4px 4px 4px"}}>
 <ResponsiveContainer width="100%" height={260}>
-<AreaChart data={enriched} margin={{top:8,right:80,bottom:8,left:4}}>
+<AreaChart data={pred.data} margin={{top:8,right:80,bottom:8,left:4}}>
 <defs>
 <linearGradient id="escGrad" x1="0" y1="0" x2="0" y2="1">
 <stop offset="0%" stopColor={C.red} stopOpacity={0.15}/><stop offset="100%" stopColor={C.red} stopOpacity={0.02}/>
@@ -1426,16 +1402,6 @@ tickFormatter={v=>{if(!v&&v!==0)return"";if(v>=1000)return`${unit}${Math.round(v
 <Tooltip content={<CT/>} cursor={{stroke:C.borderDark,strokeWidth:1.5,strokeDasharray:"4 2"}}/>
 <ReferenceLine x={0} stroke={C.navy} strokeWidth={1.5}
 label={{value:"TODAY",position:"insideTopLeft",fontSize:9,fill:C.navy,fontWeight:700}}/>
-{/* S/R reference lines — full axis span */}
-{showSR&&<ReferenceLine y={srResist} stroke="#8B5CF6" strokeWidth={1} strokeDasharray="6 3"
-label={{value:"R",position:"right",fontSize:8,fill:"#8B5CF6",fontWeight:700}}/>}
-{showSR&&<ReferenceLine y={srSupport} stroke="#8B5CF6" strokeWidth={1} strokeDasharray="6 3"
-label={{value:"S",position:"right",fontSize:8,fill:"#8B5CF6",fontWeight:700}}/>}
-{/* Fibonacci levels — full axis span */}
-{showFib&&fibLevels.filter(f=>f.isKey).map(f=>(
-<ReferenceLine key={f.r} y={f.price} stroke={C.purple} strokeWidth={0.8} strokeDasharray="3 4"
-label={{value:`${(f.r*100).toFixed(1)}%`,position:"left",fontSize:7,fill:C.purple}}/>
-))}
 {/* Forecast bands */}
 {showForecast&&<Area dataKey="escHi" fill="none" stroke={C.red} strokeWidth={0.5} strokeDasharray="3 3" dot={false} connectNulls legendType="none"/>}
 {showForecast&&<Area dataKey="escLo" fill="url(#escGrad)" stroke={C.red} strokeWidth={0.5} strokeDasharray="3 3" dot={false} connectNulls legendType="none"/>}
@@ -1443,9 +1409,6 @@ label={{value:`${(f.r*100).toFixed(1)}%`,position:"left",fontSize:7,fill:C.purpl
 {showForecast&&<Area dataKey="descLo" fill="url(#deescGrad)" stroke={C.green} strokeWidth={0.5} strokeDasharray="3 3" dot={false} connectNulls legendType="none"/>}
 {/* Historical price */}
 <Area dataKey="actual" name="Historical" stroke={C.navy} strokeWidth={2.5} fill="url(#actualGrad)" dot={false} connectNulls activeDot={{r:5,fill:C.navy,stroke:"#fff",strokeWidth:2}}/>
-{/* EMA lines */}
-{showEMA20&&<Line dataKey="ema20" stroke={C.blue} strokeWidth={1.5} dot={false} connectNulls legendType="none"/>}
-{showEMA50&&<Line dataKey="ema50" stroke={C.amber} strokeWidth={1.5} dot={false} connectNulls legendType="none"/>}
 {/* Forecast paths */}
 {showForecast&&<Line dataKey="escalation" name="Escalation" stroke={C.red} strokeWidth={2.5} strokeDasharray="8 4" dot={<EndDot dataKey="escalation" color={C.red}/>} connectNulls activeDot={{r:5,fill:C.red,stroke:"#fff",strokeWidth:2}}/>}
 {showForecast&&<Line dataKey="deesc" name="De-esc" stroke={C.green} strokeWidth={2.5} strokeDasharray="8 4" dot={<EndDot dataKey="deesc" color={C.green}/>} connectNulls activeDot={{r:5,fill:C.green,stroke:"#fff",strokeWidth:2}}/>}
@@ -1454,8 +1417,7 @@ label={{value:`${(f.r*100).toFixed(1)}%`,position:"left",fontSize:7,fill:C.purpl
 </div>
 {/* Chart footer legend */}
 <div style={{display:"flex",gap:10,marginTop:6,padding:"4px 6px",flexWrap:"wrap",alignItems:"center"}}>
-{[{color:C.navy,label:"Price"},{color:C.red,label:"Escalation",dash:true},{color:C.green,label:"De-esc",dash:true},
-{color:C.blue,label:"EMA20"},{color:C.amber,label:"EMA50"},{color:C.purple,label:"Fib"},{color:"#8B5CF6",label:"S/R"}]
+{[{color:C.navy,label:"Price"},{color:C.red,label:"Escalation",dash:true},{color:C.green,label:"De-esc",dash:true}]
 .map(({color,label,dash})=>(
 <div key={label} style={{display:"flex",alignItems:"center",gap:4}}>
 <div style={{width:14,height:0,borderTop:`2px ${dash?"dashed":"solid"} ${color}`}}/>
@@ -2235,7 +2197,7 @@ Clear Closed
 <div style={{fontFamily:SERIF,fontSize:32,marginBottom:10}}>📊</div>
 <div style={{fontSize:14,fontWeight:700,color:C.navy,marginBottom:6}}>No picks tracked yet</div>
 <div style={{fontSize:12,color:C.muted,maxWidth:320,margin:"0 auto",lineHeight:1.6}}>
-Go to <strong>Signals & Picks</strong> -> click <strong>! Generate Picks</strong>. Every pick auto-saves here.
+Go to <strong>Signals &amp; Picks</strong> {"->"} click <strong>! Generate Picks</strong>. Every pick auto-saves here.
 </div>
 </div>
 )}
@@ -3121,7 +3083,7 @@ return <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,bor
 <div style={{display:"flex",flexDirection:"column",gap:12}}>
 <div>
 <div style={{fontFamily:SERIF,fontSize:18,fontWeight:700,color:C.navy}}>Claude AI Morning Brief</div>
-<div style={{fontSize:11,color:C.muted,marginTop:2}}>Live prices + news + your scenario -> actionable intelligence</div>
+<div style={{fontSize:11,color:C.muted,marginTop:2}}>Live prices + news + your scenario {"→"} actionable intelligence</div>
 </div>
 <Card style={{background:C.panel}}>
 <div style={{fontSize:10,fontWeight:700,color:C.muted,letterSpacing:0.8,marginBottom:8}}>INPUTS</div>
